@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hand Gestures | Accessibility Hub</title>
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,900" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: #0f0f1a;
+            color: white;
+            position: relative;
+            min-height: 100vh;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #particles-js {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+        
+        .container {
+            position: relative;
+            z-index: 1;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 80px auto 0;
+            flex: 1;
+            padding-bottom: 150px;
+        }
+        
+        .navbar {
+            background: rgba(30, 30, 50, 0.85);
+            padding: 1rem 2rem;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        
+        .nav-container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .nav-logo {
+            color: #e0e0ff;
+            font-weight: 700;
+            font-size: 1.5rem;
+            text-decoration: none;
+        }
+        
+        .nav-menu {
+            display: flex;
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            color: #c0c0ff;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+            padding: 0.5rem 0;
+        }
+        
+        .nav-link:hover {
+            color: #ffffff;
+        }
+        
+        .nav-hamburger {
+            display: none;
+            cursor: pointer;
+        }
+        
+        .tool-header {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            text-align: center;
+        }
+        
+        .tool-title {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .tool-description {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .upload-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 800px;
+            margin: 2rem auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            color: #2575fc;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        
+        .file-input-container {
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .file-input {
+            width: 0.1px;
+            height: 0.1px;
+            opacity: 0;
+            position: absolute;
+            overflow: hidden;
+            z-index: -1;
+        }
+        
+        .file-label {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            font-size: 1.1rem;
+        }
+        
+        .file-label:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .file-requirements {
+            margin-top: 1rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+        
+        .preview-section {
+            margin-top: 2rem;
+            display: block !important;
+        }
+        
+        .preview-container {
+            width: 500px;
+            height: 500px;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.08);
+            margin: 1rem auto;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .preview-placeholder {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .preview-placeholder i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #6a11cb;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .demo-btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #2575fc, #6a11cb);
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            font-size: 1.1rem;
+            border: none;
+        }
+
+        .demo-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .footer {
+            background: rgba(30, 30, 50, 0.95);
+            padding: 2rem;
+            width: 100%;
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            z-index: 10;
+            margin-top: auto;
+        }
+        
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        
+        .footer-logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #e0e0ff;
+        }
+        
+        .footer-social {
+            display: flex;
+            gap: 1.5rem;
+        }
+        
+        .social-link {
+            color: #c0c0ff;
+            font-size: 1.8rem;
+            transition: color 0.3s ease;
+        }
+        
+        .social-link:hover {
+            color: #ffffff;
+        }
+        
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .footer-link {
+            color: #c0c0ff;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .footer-link:hover {
+            color: #ffffff;
+        }
+        
+        .footer-copyright {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+                position: fixed;
+                top: 70px;
+                left: 0;
+                width: 100%;
+                background: rgba(30, 30, 50, 0.95);
+                flex-direction: column;
+                padding: 1rem;
+                gap: 1rem;
+            }
+            
+            .nav-menu.active {
+                display: flex;
+            }
+            
+            .nav-hamburger {
+                display: block;
+            }
+            
+            .preview-container {
+                width: 90%;
+                height: auto;
+                aspect-ratio: 1/1;
+            }
+            
+            .footer-social {
+                gap: 1rem;
+            }
+            
+            .social-link {
+                font-size: 1.5rem;
+            }
+            
+            .container {
+                padding-bottom: 180px;
+            }
+
+            .button-container {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="particles-js"></div>
+    
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">Accessibility Hub</a>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="about.html" class="nav-link">About</a>
+                <a href="services.html" class="nav-link">Services</a>
+                <a href="contact.html" class="nav-link">Contact</a>
+            </div>
+            <div class="nav-hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="tool-header">
+            <h1 class="tool-title">Hand Gestures</h1>
+            <p class="tool-description">Upload gesture documentation and command profiles</p>
+        </div>
+        
+        <div class="upload-area">
+            <div class="upload-card">
+                <div class="upload-icon">
+                    <i class="fas fa-hand-paper"></i>
+                </div>
+                <h3 style="text-align: center;">Upload Gesture Profiles</h3>
+                <p style="text-align: center;">Supported formats: PDF and Word documents</p>
+                
+                <div class="file-input-container">
+                    <input type="file" id="file-upload" accept=".pdf,.doc,.docx" class="file-input">
+                    <label for="file-upload" class="file-label">
+                        <i class="fas fa-cloud-upload-alt"></i> Choose Files
+                    </label>
+                    <p class="file-requirements">Max file size: 100MB</p>
+                </div>
+                
+                <div class="preview-section">
+                    <h4 style="text-align: center;">File Preview</h4>
+                    <div class="preview-container" id="preview-container">
+                        <div class="preview-placeholder">
+                            <i class="far fa-file-alt"></i>
+                            <p>No file selected</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-logo">Accessibility Hub</div>
+            <div class="footer-social">
+                <a href="https://wa.me/9567942625" target="_blank" class="social-link">
+                    <i class="fab fa-whatsapp"></i>
+                </a>
+                <a href="https://www.linkedin.com/in/ayush7ag" target="_blank" class="social-link">
+                    <i class="fab fa-linkedin-in"></i>
+                </a>
+                <a href="https://x.com/_7ayush" target="_blank" class="social-link">
+                    <i class="fab fa-twitter"></i>
+                </a>
+                <a href="https://www.instagram.com/_ayush.ag" target="_blank" class="social-link">
+                    <i class="fab fa-instagram"></i>
+                </a>
+            </div>
+            <div class="footer-links">
+                <a href="privacy-policy.html" class="footer-link">Privacy Policy</a>
+                <a href="terms-of-service.html" class="footer-link">Terms of Service</a>
+                <a href="contact.html" class="footer-link">Contact Us</a>
+            </div>
+            <div class="footer-copyright">
+                &copy; 2025 Accessibility Hub. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            particlesJS('particles-js', {
+                particles: {
+                    number: { value: 80, density: { enable: true, value_area: 800 } },
+                    color: { value: "#ffffff" },
+                    shape: { type: "circle" },
+                    opacity: { value: 0.3, random: true },
+                    size: { value: 3, random: true },
+                    line_linked: { enable: true, distance: 150, color: "#ffffff", opacity: 0.2, width: 1 },
+                    move: { enable: true, speed: 1, direction: "none" }
+                },
+                interactivity: {
+                    detect_on: "canvas",
+                    events: {
+                        onhover: { enable: true, mode: "grab" },
+                        onclick: { enable: true, mode: "push" },
+                        resize: true
+                    }
+                }
+            });
+
+            const fileInput = document.getElementById('file-upload');
+            if (fileInput) {
+                fileInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    const previewContainer = document.getElementById('preview-container');
+                    
+                    if (!file) return;
+                    
+                    const validTypes = ['application/pdf', 'application/msword', 
+                                      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+                    if (!validTypes.includes(file.type)) {
+                        alert('Please upload only PDF or Word documents.');
+                        return;
+                    }
+                    
+                    if (file.size > 100 * 1024 * 1024) {
+                        alert('File size exceeds 100MB limit.');
+                        return;
+                    }
+                    
+                    previewContainer.innerHTML = '';
+                    
+                    if (file.type === 'application/pdf') {
+                        const objectEl = document.createElement('object');
+                        objectEl.data = URL.createObjectURL(file);
+                        objectEl.type = 'application/pdf';
+                        objectEl.width = '100%';
+                        objectEl.height = '100%';
+                        objectEl.style.borderRadius = '8px';
+                        previewContainer.appendChild(objectEl);
+                    } else {
+                        const fileInfo = document.createElement('div');
+                        fileInfo.innerHTML = `
+                            <i class="fas fa-file-word" style="font-size: 4rem; color: #2b579a;"></i>
+                            <h3 style="margin: 1rem 0;">${file.name}</h3>
+                            <p>${(file.size / (1024*1024)).toFixed(2)} MB</p>
+                        `;
+                        previewContainer.appendChild(fileInfo);
+                    }
+                    
+                    const buttonContainer = document.createElement('div');
+                    buttonContainer.className = 'button-container';
+                    
+                    const downloadBtn = document.createElement('button');
+                    downloadBtn.className = 'file-label';
+                    downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download File';
+                    downloadBtn.onclick = function() {
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(file);
+                        a.download = file.name;
+                        a.click();
+                    };
+                    
+                    const demoBtn = document.createElement('button');
+                    demoBtn.className = 'demo-btn';
+                    demoBtn.innerHTML = '<i class="fas fa-robot"></i> Demo Gesture Model';
+                    demoBtn.onclick = function() {
+                        window.open('https://teachablemachine.withgoogle.com/', '_blank');
+                    };
+                    
+                    buttonContainer.appendChild(downloadBtn);
+                    buttonContainer.appendChild(demoBtn);
+                    previewContainer.appendChild(buttonContainer);
+                });
+            }
+
+            const hamburger = document.querySelector('.nav-hamburger');
+            const navMenu = document.querySelector('.nav-menu');
+            
+            if (hamburger) {
+                hamburger.addEventListener('click', function() {
+                    navMenu.classList.toggle('active');
+                    hamburger.classList.toggle('active');
+                });
+            }
+        });
+    </script>
+</body>
+</html>
