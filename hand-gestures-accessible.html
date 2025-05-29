@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hand Gestures Accessible Viewer | Accessibility Hub</title>
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,900" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: #0f0f1a;
+            color: white;
+            position: relative;
+            min-height: 100vh;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #particles-js {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+        
+        .container {
+            position: relative;
+            z-index: 1;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 80px auto 0;
+            flex: 1;
+            padding-bottom: 150px;
+        }
+        
+        .navbar {
+            background: rgba(30, 30, 50, 0.85);
+            padding: 1rem 2rem;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        
+        .nav-container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .nav-logo {
+            color: #e0e0ff;
+            font-weight: 700;
+            font-size: 1.5rem;
+            text-decoration: none;
+        }
+        
+        .nav-menu {
+            display: flex;
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            color: #c0c0ff;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+            padding: 0.5rem 0;
+        }
+        
+        .nav-link:hover {
+            color: #ffffff;
+        }
+        
+        .nav-hamburger {
+            display: none;
+            cursor: pointer;
+        }
+        
+        .viewer-header {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            text-align: center;
+        }
+        
+        .viewer-title {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .viewer-description {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .viewer-content {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .document-viewer {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            height: 70vh;
+            overflow: auto;
+            position: relative;
+        }
+        
+        .document-preview {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            max-height: 200px;
+            overflow: auto;
+        }
+        
+        .gesture-controls {
+            width: 350px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .camera-box {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            position: relative;
+        }
+        
+        .camera-title {
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .camera-status {
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .camera-status.on {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .camera-status.off {
+            background-color: #F44336;
+            color: white;
+        }
+        
+        .camera-feed {
+            width: 100%;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        
+        .gesture-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .camera-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        
+        .gesture-instructions {
+            margin-top: 1.5rem;
+        }
+        
+        .gesture-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .gesture-icon {
+            font-size: 1.8rem;
+            margin-right: 1rem;
+            width: 40px;
+            text-align: center;
+        }
+        
+        .gesture-desc {
+            flex: 1;
+        }
+        
+        .viewer-controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .control-btn {
+            padding: 0.8rem 1.5rem;
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            font-size: 1rem;
+        }
+        
+        .control-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .control-btn.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        
+        .connection-status {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            z-index: 1000;
+        }
+        
+        .connection-status.connected {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .connection-status.disconnected {
+            background-color: #F44336;
+            color: white;
+        }
+        
+        .page-info {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        #pdf-container {
+            width: 100%;
+            text-align: center;
+        }
+        
+        #pdf-render {
+            max-width: 100%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .manual-controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .manual-controls button {
+            margin: 5px;
+        }
+        
+        .footer {
+            background: rgba(30, 30, 50, 0.95);
+            padding: 2rem;
+            width: 100%;
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            z-index: 10;
+            margin-top: auto;
+        }
+        
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        
+        .footer-logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #e0e0ff;
+        }
+        
+        .footer-social {
+            display: flex;
+            gap: 1.5rem;
+        }
+        
+        .social-link {
+            color: #c0c0ff;
+            font-size: 1.8rem;
+            transition: color 0.3s ease;
+        }
+        
+        .social-link:hover {
+            color: #ffffff;
+        }
+        
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .footer-link {
+            color: #c0c0ff;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .footer-link:hover {
+            color: #ffffff;
+        }
+        
+        .footer-copyright {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        
+        @media (max-width: 1024px) {
+            .viewer-content {
+                flex-direction: column;
+            }
+            
+            .gesture-controls {
+                width: 100%;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+                position: fixed;
+                top: 70px;
+                left: 0;
+                width: 100%;
+                background: rgba(30, 30, 50, 0.95);
+                flex-direction: column;
+                padding: 1rem;
+                gap: 1rem;
+            }
+            
+            .nav-menu.active {
+                display: flex;
+            }
+            
+            .nav-hamburger {
+                display: block;
+            }
+            
+            .footer-social {
+                gap: 1rem;
+            }
+            
+            .social-link {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="particles-js"></div>
+    
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">Accessibility Hub</a>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="about.html" class="nav-link">About</a>
+                <a href="services.html" class="nav-link">Services</a>
+                <a href="contact.html" class="nav-link">Contact</a>
+            </div>
+            <div class="nav-hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="viewer-header">
+            <h1 class="viewer-title">Hand Gesture Viewer</h1>
+            <p class="viewer-description">Control your document with hand gestures</p>
+        </div>
+        
+        <div class="viewer-content">
+            <div class="document-viewer" id="document-viewer">
+                <div class="document-preview" id="document-preview">
+                    <!-- Preview will be inserted here -->
+                </div>
+                <div id="pdf-container">
+                    <canvas id="pdf-render"></canvas>
+                </div>
+            </div>
+            
+            <div class="gesture-controls">
+                <h3 style="text-align: center; margin-bottom: 1.5rem;">Gesture Controls</h3>
+                
+                <div class="camera-box">
+                    <div class="camera-title">
+                        <h4>Camera Preview</h4>
+                        <div class="camera-status off" id="camera-status">OFF</div>
+                    </div>
+                    <div class="camera-container">
+                        <video class="camera-feed" id="camera-feed" autoplay playsinline style="display: none;"></video>
+                        <canvas class="gesture-overlay" id="gesture-overlay" style="display: none;"></canvas>
+                    </div>
+                    <div class="viewer-controls">
+                        <button class="control-btn" id="toggle-camera">
+                            <i class="fas fa-video"></i> Toggle Camera
+                        </button>
+                        <button class="control-btn secondary" id="calibrate-btn">
+                            <i class="fas fa-sliders-h"></i> Calibrate
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="gesture-instructions">
+                    <h4 style="margin-bottom: 1rem;">Gesture Guide:</h4>
+                    
+                    <div class="gesture-item">
+                        <div class="gesture-icon">👆</div>
+                        <div class="gesture-desc">Point to highlight text</div>
+                    </div>
+                    
+                    <div class="gesture-item">
+                        <div class="gesture-icon">🤏</div>
+                        <div class="gesture-desc">Pinch to zoom in/out</div>
+                    </div>
+                    
+                    <div class="gesture-item">
+                        <div class="gesture-icon">🖐️→</div>
+                        <div class="gesture-desc">Swipe right for next page</div>
+                    </div>
+                    
+                    <div class="gesture-item">
+                        <div class="gesture-icon">🖐️←</div>
+                        <div class="gesture-desc">Swipe left for previous page</div>
+                    </div>
+                </div>
+                
+                <div id="manual-controls-container" style="display: none;">
+                    <h4 style="margin-top: 20px; text-align: center;">Manual Controls</h4>
+                    <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px;">
+                        <button class="control-btn" id="prev-page-btn"><i class="fas fa-arrow-left"></i> Previous</button>
+                        <button class="control-btn" id="next-page-btn"><i class="fas fa-arrow-right"></i> Next</button>
+                    </div>
+                    <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px;">
+                        <button class="control-btn" id="zoom-in-btn"><i class="fas fa-search-plus"></i> Zoom In</button>
+                        <button class="control-btn" id="zoom-out-btn"><i class="fas fa-search-minus"></i> Zoom Out</button>
+                    </div>
+                    <div style="display: flex; justify-content: center; margin-top: 10px;">
+                        <button class="control-btn" id="fit-screen-btn"><i class="fas fa-expand"></i> Fit to Screen</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="connection-status disconnected" id="connection-status">
+        Gesture Server: Disconnected
+    </div>
+
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-logo">Accessibility Hub</div>
+            <div class="footer-social">
+                <a href="https://wa.me/9567942625" target="_blank" class="social-link">
+                    <i class="fab fa-whatsapp"></i>
+                </a>
+                <a href="https://www.linkedin.com/in/ayush7ag" target="_blank" class="social-link">
+                    <i class="fab fa-linkedin-in"></i>
+                </a>
+                <a href="https://x.com/_7ayush" target="_blank" class="social-link">
+                    <i class="fab fa-twitter"></i>
+                </a>
+                <a href="https://www.instagram.com/_ayush.ag" target="_blank" class="social-link">
+                    <i class="fab fa-instagram"></i>
+                </a>
+            </div>
+            <div class="footer-links">
+                <a href="privacy-policy.html" class="footer-link">Privacy Policy</a>
+                <a href="terms-of-service.html" class="footer-link">Terms of Service</a>
+                <a href="contact.html" class="footer-link">Contact Us</a>
+            </div>
+            <div class="footer-copyright">
+                &copy; 2025 Accessibility Hub. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script src="https://mozilla.github.io/pdf.js/build/pdf.js"></script>
+    
+    <script>
+      // WebSocket connection with enhanced error handling
+let socket;
+const connectionStatus = document.getElementById('connection-status');
+
+async function connectWebSocket() {
+    // Close existing connection if it exists
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.close();
+    }
+
+    try {
+        socket = new WebSocket('ws://localhost:8765');
+
+        socket.onopen = function(e) {
+            console.log('Successfully connected to gesture server');
+            connectionStatus.textContent = 'Gesture Server: Connected';
+            connectionStatus.classList.remove('disconnected');
+            connectionStatus.classList.add('connected');
+        };
+        
+        socket.onclose = function(e) {
+            console.log('Disconnected from gesture server');
+            connectionStatus.textContent = 'Gesture Server: Disconnected';
+            connectionStatus.classList.remove('connected');
+            connectionStatus.classList.add('disconnected');
+            
+            // Try to reconnect after 3 seconds
+            setTimeout(connectWebSocket, 3000);
+        };
+        
+        socket.onerror = function(error) {
+            console.error('WebSocket error:', error);
+            connectionStatus.textContent = 'Gesture Server: Connection Error';
+            connectionStatus.classList.remove('connected');
+            connectionStatus.classList.add('disconnected');
+        };
+        
+        socket.onmessage = function(event) {
+            const command = event.data;
+            console.log('Received command:', command);
+            
+            switch(command) {
+                case 'next_page':
+                    pdfViewer.nextPage();
+                    break;
+                case 'prev_page':
+                    pdfViewer.prevPage();
+                    break;
+                case 'zoom_in':
+                    pdfViewer.zoomIn();
+                    break;
+                case 'zoom_out':
+                    pdfViewer.zoomOut();
+                    break;
+                case 'fit_screen':
+                    pdfViewer.fitScreen();
+                    break;
+            }
+        };
+    } catch (error) {
+        console.error('WebSocket connection error:', error);
+        connectionStatus.textContent = 'Gesture Server: Connection Failed';
+        connectionStatus.classList.remove('connected');
+        connectionStatus.classList.add('disconnected');
+        
+        // Try to reconnect after 5 seconds
+        setTimeout(connectWebSocket, 5000);
+    }
+}
+
+// Initialize connection when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    connectWebSocket();
+});
+
+        function enableManualControls() {
+            const manualControls = document.getElementById('manual-controls-container');
+            manualControls.style.display = 'block';
+            
+            // Add event listeners for manual controls
+            document.getElementById('prev-page-btn').addEventListener('click', () => pdfViewer.prevPage());
+            document.getElementById('next-page-btn').addEventListener('click', () => pdfViewer.nextPage());
+            document.getElementById('zoom-in-btn').addEventListener('click', () => pdfViewer.zoomIn());
+            document.getElementById('zoom-out-btn').addEventListener('click', () => pdfViewer.zoomOut());
+            document.getElementById('fit-screen-btn').addEventListener('click', () => pdfViewer.fitScreen());
+        }
+
+        // PDF Viewer Class
+        class PDFViewer {
+            constructor() {
+                this.pdfDoc = null;
+                this.currentPage = 1;
+                this.scale = 1.0;
+                this.initElements();
+                this.loadDocument();
+            }
+            
+            initElements() {
+                this.canvas = document.getElementById('pdf-render');
+                this.ctx = this.canvas.getContext('2d');
+                this.documentPreview = document.getElementById('document-preview');
+                this.pageInfo = document.createElement('div');
+                this.pageInfo.className = 'page-info';
+                this.canvas.parentNode.appendChild(this.pageInfo);
+            }
+            
+            loadDocument() {
+                const storedDoc = sessionStorage.getItem('currentDocument');
+                if (!storedDoc) {
+                    alert('No document found. Please upload a document first.');
+                    window.location.href = 'hand-gestures.html';
+                    return;
+                }
+
+                const docInfo = JSON.parse(storedDoc);
+                
+                // Show preview
+                if (docInfo.preview) {
+                    this.documentPreview.innerHTML = docInfo.preview;
+                }
+                
+                // Initialize PDF.js
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://mozilla.github.io/pdf.js/build/pdf.worker.js';
+                
+                // Load PDF document
+                pdfjsLib.getDocument(docInfo.url).promise.then(pdf => {
+                    this.pdfDoc = pdf;
+                    this.updatePageInfo();
+                    this.renderPage(this.currentPage);
+                }).catch(err => {
+                    console.error('PDF loading error:', err);
+                    alert('Error loading PDF document');
+                });
+            }
+            
+            renderPage(pageNum) {
+                if (!this.pdfDoc) return;
+                
+                this.currentPage = Math.max(1, Math.min(pageNum, this.pdfDoc.numPages));
+                this.updatePageInfo();
+                
+                this.pdfDoc.getPage(this.currentPage).then(page => {
+                    const viewport = page.getViewport({ scale: this.scale });
+                    this.canvas.height = viewport.height;
+                    this.canvas.width = viewport.width;
+                    
+                    const renderContext = {
+                        canvasContext: this.ctx,
+                        viewport: viewport
+                    };
+                    
+                    page.render(renderContext);
+                });
+            }
+            
+            updatePageInfo() {
+                if (this.pdfDoc) {
+                    this.pageInfo.textContent = `Page ${this.currentPage} of ${this.pdfDoc.numPages} | Zoom: ${Math.round(this.scale * 100)}%`;
+                }
+            }
+            
+            zoomIn() {
+                this.scale = Math.min(this.scale + 0.25, 3.0);
+                this.renderPage(this.currentPage);
+            }
+            
+            zoomOut() {
+                this.scale = Math.max(this.scale - 0.25, 0.5);
+                this.renderPage(this.currentPage);
+            }
+            
+            fitScreen() {
+                if (!this.pdfDoc) return;
+                
+                this.pdfDoc.getPage(this.currentPage).then(page => {
+                    const container = document.getElementById('pdf-container');
+                    const containerWidth = container.clientWidth - 40; // Account for padding
+                    
+                    const viewport = page.getViewport({ scale: 1.0 });
+                    this.scale = containerWidth / viewport.width;
+                    
+                    this.renderPage(this.currentPage);
+                });
+            }
+            
+            prevPage() {
+                if (this.currentPage > 1) {
+                    this.renderPage(this.currentPage - 1);
+                }
+            }
+            
+            nextPage() {
+                if (this.pdfDoc && this.currentPage < this.pdfDoc.numPages) {
+                    this.renderPage(this.currentPage + 1);
+                }
+            }
+        }
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize WebSocket connection
+            connectWebSocket();
+            
+            // Initialize PDF viewer
+            window.pdfViewer = new PDFViewer();
+            
+            // Fit screen initially
+            setTimeout(() => {
+                pdfViewer.fitScreen();
+            }, 500);
+
+            // Camera toggle functionality
+            const toggleCameraBtn = document.getElementById('toggle-camera');
+            const cameraStatus = document.getElementById('camera-status');
+            const cameraFeed = document.getElementById('camera-feed');
+            const gestureOverlay = document.getElementById('gesture-overlay');
+            let cameraActive = false;
+            
+            toggleCameraBtn.addEventListener('click', async () => {
+                try {
+                    if (!cameraActive) {
+                        // Start camera
+                        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                        cameraFeed.srcObject = stream;
+                        cameraFeed.style.display = 'block';
+                        gestureOverlay.style.display = 'block';
+                        cameraStatus.textContent = 'ON';
+                        cameraStatus.className = 'camera-status on';
+                        toggleCameraBtn.innerHTML = '<i class="fas fa-video-slash"></i> Toggle Camera';
+                        cameraActive = true;
+                    } else {
+                        // Stop camera
+                        const stream = cameraFeed.srcObject;
+                        const tracks = stream.getTracks();
+                        tracks.forEach(track => track.stop());
+                        cameraFeed.srcObject = null;
+                        cameraFeed.style.display = 'none';
+                        gestureOverlay.style.display = 'none';
+                        cameraStatus.textContent = 'OFF';
+                        cameraStatus.className = 'camera-status off';
+                        toggleCameraBtn.innerHTML = '<i class="fas fa-video"></i> Toggle Camera';
+                        cameraActive = false;
+                    }
+                } catch (error) {
+                    console.error('Error accessing camera:', error);
+                    alert('Could not access the camera. Please ensure you have granted camera permissions.');
+                    cameraStatus.textContent = 'ERROR';
+                    cameraStatus.className = 'camera-status off';
+                }
+            });
+
+            // Calibration button functionality
+            document.getElementById('calibrate-btn').addEventListener('click', () => {
+                alert('Calibration settings would be configured here');
+            });
+
+            // Mobile menu toggle
+            const hamburger = document.querySelector('.nav-hamburger');
+            const navMenu = document.querySelector('.nav-menu');
+            
+            if (hamburger) {
+                hamburger.addEventListener('click', function() {
+                    navMenu.classList.toggle('active');
+                    hamburger.classList.toggle('active');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

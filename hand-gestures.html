@@ -228,6 +228,26 @@
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
         }
         
+        .connection-status {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            z-index: 1000;
+        }
+        
+        .connection-status.connected {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .connection-status.disconnected {
+            background-color: #F44336;
+            color: white;
+        }
+        
         .footer {
             background: rgba(30, 30, 50, 0.95);
             padding: 2rem;
@@ -393,6 +413,10 @@
         </div>
     </div>
 
+    <div class="connection-status disconnected" id="connection-status">
+        Gesture Server: Disconnected
+    </div>
+
     <footer class="footer">
         <div class="footer-container">
             <div class="footer-logo">Accessibility Hub</div>
@@ -426,6 +450,7 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize particles.js
             particlesJS('particles-js', {
                 particles: {
                     number: { value: 80, density: { enable: true, value_area: 800 } },
@@ -447,10 +472,13 @@
             });
 
             const fileInput = document.getElementById('file-upload');
+            const previewContainer = document.getElementById('preview-container');
+            let currentFile = null;
+
             if (fileInput) {
                 fileInput.addEventListener('change', function(e) {
                     const file = e.target.files[0];
-                    const previewContainer = document.getElementById('preview-container');
+                    currentFile = file;
                     
                     if (!file) return;
                     
@@ -489,22 +517,39 @@
                     const buttonContainer = document.createElement('div');
                     buttonContainer.className = 'button-container';
                     
+                    // Download button
                     const downloadBtn = document.createElement('button');
                     downloadBtn.className = 'file-label';
                     downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download File';
-                    downloadBtn.onclick = function() {
+                    downloadBtn.addEventListener('click', function() {
                         const a = document.createElement('a');
                         a.href = URL.createObjectURL(file);
                         a.download = file.name;
                         a.click();
-                    };
+                    });
                     
+                    // Demo Model button
                     const demoBtn = document.createElement('button');
                     demoBtn.className = 'demo-btn';
                     demoBtn.innerHTML = '<i class="fas fa-robot"></i> Demo Gesture Model';
-                    demoBtn.onclick = function() {
-                        window.open('https://teachablemachine.withgoogle.com/', '_blank');
-                    };
+                    demoBtn.addEventListener('click', function() {
+                        if (!currentFile) {
+                            alert('Please upload a file first');
+                            return;
+                        }
+                        
+                        // Store file data in sessionStorage
+                        sessionStorage.setItem('currentDocument', JSON.stringify({
+                            name: currentFile.name,
+                            type: currentFile.type,
+                            size: currentFile.size,
+                            url: URL.createObjectURL(currentFile),
+                            preview: previewContainer.innerHTML
+                        }));
+                        
+                        // Open the viewer page
+                        window.location.href = 'hand-gestures-accessible.html';
+                    });
                     
                     buttonContainer.appendChild(downloadBtn);
                     buttonContainer.appendChild(demoBtn);
@@ -512,6 +557,7 @@
                 });
             }
 
+            // Mobile menu toggle
             const hamburger = document.querySelector('.nav-hamburger');
             const navMenu = document.querySelector('.nav-menu');
             
