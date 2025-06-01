@@ -1,30 +1,35 @@
-🎛️ MetaSynAI
-MetaSynAI is an innovative project that integrates voice commands, hand gestures, and eye-tracking to create an accessible and intuitive user interface. It aims to enhance user interaction by providing multiple input modalities, making technology more inclusive and user-friendly.
 
-🚀 Features
-Voice Assistant: Control applications and navigate interfaces using voice commands.
 
-Hand Gesture Recognition: Utilize hand gestures for seamless interaction without physical contact.
+```
+# 🎛️ MetaSynAI
 
-Eye-Tracking Integration: Navigate and interact with interfaces using eye movement, enhancing accessibility.
+**MetaSynAI** is an AI-powered accessibility framework that combines **voice commands**, **hand gestures**, and **eye-tracking** for futuristic and inclusive user interaction.
 
-Responsive Web Interface: A user-friendly web interface that adapts to various devices and screen sizes.
+---
 
-🛠️ Technologies Used
-Frontend: HTML, CSS, JavaScript
+## ✨ Features
 
-Backend: Python (Flask)
+- 🗣️ **Voice Assistant** – Control applications via voice commands.
+- ✋ **Hand Gesture Recognition** – Perform tasks using hand movements.
+- 👁️ **Eye-Tracking Navigation** – Interact using eye gaze.
+- 🌐 **Modern Web Interface** – Sleek, responsive, and interactive UI.
 
-Machine Learning: TensorFlow, OpenCV
+---
 
-Voice Recognition: SpeechRecognition API
+## 🛠️ Tech Stack
 
-Eye-Tracking: Dlib, OpenCV
+- **Frontend**: HTML, CSS, JavaScript  
+- **Backend**: Python (Flask)  
+- **ML/AI**: TensorFlow, OpenCV  
+- **Voice**: SpeechRecognition API  
+- **Eye-Tracking**: Dlib, OpenCV  
 
-📁 Project Structure
-pgsql
-Copy
-Edit
+---
+
+## 📁 Folder Structure
+
+```
+
 MetaSynAI/
 ├── assets/
 ├── css/
@@ -35,63 +40,70 @@ MetaSynAI/
 │   ├── hand-gestures.html
 │   └── eye-gaze.html
 ├── app.py
-├── gesture_server.py
+├── gesture\_zoom.py
 ├── voice-assistant-server.js
-└── README.md
-🧪 Setup and Installation
-Clone the repository:
+├── README.md
 
-bash
-Copy
-Edit
+````
+
+---
+
+## ⚙️ Getting Started
+
+### 1. Clone the repo
+```bash
 git clone https://github.com/dj-ayush/MetaSynAI.git
 cd MetaSynAI
-Create a virtual environment:
+````
 
-bash
-Copy
-Edit
+### 2. Create & activate a virtual environment
+
+```bash
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-Install the dependencies:
+# On Windows
+venv\Scripts\activate
+# On Mac/Linux
+source venv/bin/activate
+```
 
-bash
-Copy
-Edit
+### 3. Install dependencies
+
+```bash
 pip install -r requirements.txt
-Run the application:
+```
 
-bash
-Copy
-Edit
+### 4. Run the app
+
+```bash
 python app.py
-Access the application:
-Open your browser and navigate to http://localhost:5000
+```
 
-🤝 Contributing
-Contributions are welcome! Please follow these steps:
+### 5. Open in browser
 
-Fork the repository
+```
+http://localhost:5000
+```
 
-Create a new branch:
+---
 
-bash
-Copy
-Edit
-git checkout -b feature-name
-Commit your changes:
+## 🤝 Contributing
 
-bash
-Copy
-Edit
-git commit -m "Add feature"
-Push to the branch:
+We welcome contributions!
 
-bash
-Copy
-Edit
-git push origin feature-name
-Open a pull request
+1. Fork the repo
+2. Create a new branch: `git checkout -b feature-name`
+3. Commit your changes: `git commit -m "Added feature"`
+4. Push to your branch: `git push origin feature-name`
+5. Create a pull request 🚀
 
-📄 License
-This project is licensed under the MIT License.
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+> Built with ❤️ by [@dj-ayush](https://github.com/dj-ayush)
+
+```
