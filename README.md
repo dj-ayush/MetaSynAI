@@ -1,6 +1,6 @@
 
 
-```
+
 # 🎛️ MetaSynAI
 
 **MetaSynAI** is an AI-powered accessibility framework that combines **voice commands**, **hand gestures**, and **eye-tracking** for futuristic and inclusive user interaction.
@@ -22,14 +22,11 @@
 - **Backend**: Python (Flask)  
 - **ML/AI**: TensorFlow, OpenCV  
 - **Voice**: SpeechRecognition API  
-- **Eye-Tracking**: Dlib, OpenCV  
-
----
-
+- **Eye-Tracking**: Dlib, OpenCV
+- 
 ## 📁 Folder Structure
-
+---
 ```
-
 MetaSynAI/
 ├── assets/
 ├── css/
@@ -45,16 +42,15 @@ MetaSynAI/
 ├── README.md
 
 ````
+ ⚙️ Getting Started
 
 ---
-
-## ⚙️ Getting Started
-
+```
 ### 1. Clone the repo
 ```bash
 git clone https://github.com/dj-ayush/MetaSynAI.git
 cd MetaSynAI
-````
+```
 
 ### 2. Create & activate a virtual environment
 
@@ -106,4 +102,3 @@ This project is licensed under the [MIT License](LICENSE).
 
 > Built with ❤️ by [@dj-ayush](https://github.com/dj-ayush)
 
-```
