@@ -546,274 +546,218 @@
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <script src="https://mozilla.github.io/pdf.js/build/pdf.js"></script>
     
-    <script>
-      // WebSocket connection with enhanced error handling
+  <script>
 let socket;
 const connectionStatus = document.getElementById('connection-status');
 
-async function connectWebSocket() {
-    // Close existing connection if it exists
-    if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.close();
+function connectWebSocket() {
+    if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
+        return; // Avoid duplicate connections
     }
 
-    try {
-        socket = new WebSocket('ws://localhost:8765');
+    socket = new WebSocket('ws://localhost:8765');
 
-        socket.onopen = function(e) {
-            console.log('Successfully connected to gesture server');
-            connectionStatus.textContent = 'Gesture Server: Connected';
-            connectionStatus.classList.remove('disconnected');
-            connectionStatus.classList.add('connected');
-        };
-        
-        socket.onclose = function(e) {
-            console.log('Disconnected from gesture server');
-            connectionStatus.textContent = 'Gesture Server: Disconnected';
-            connectionStatus.classList.remove('connected');
-            connectionStatus.classList.add('disconnected');
-            
-            // Try to reconnect after 3 seconds
-            setTimeout(connectWebSocket, 3000);
-        };
-        
-        socket.onerror = function(error) {
-            console.error('WebSocket error:', error);
-            connectionStatus.textContent = 'Gesture Server: Connection Error';
-            connectionStatus.classList.remove('connected');
-            connectionStatus.classList.add('disconnected');
-        };
-        
-        socket.onmessage = function(event) {
-            const command = event.data;
-            console.log('Received command:', command);
-            
-            switch(command) {
-                case 'next_page':
-                    pdfViewer.nextPage();
-                    break;
-                case 'prev_page':
-                    pdfViewer.prevPage();
-                    break;
-                case 'zoom_in':
-                    pdfViewer.zoomIn();
-                    break;
-                case 'zoom_out':
-                    pdfViewer.zoomOut();
-                    break;
-                case 'fit_screen':
-                    pdfViewer.fitScreen();
-                    break;
-            }
-        };
-    } catch (error) {
-        console.error('WebSocket connection error:', error);
-        connectionStatus.textContent = 'Gesture Server: Connection Failed';
+    socket.onopen = function () {
+        console.log('Successfully connected to gesture server');
+        connectionStatus.textContent = 'Gesture Server: Connected';
+        connectionStatus.classList.remove('disconnected');
+        connectionStatus.classList.add('connected');
+    };
+
+    socket.onclose = function () {
+        console.log('Disconnected from gesture server');
+        connectionStatus.textContent = 'Gesture Server: Disconnected';
         connectionStatus.classList.remove('connected');
         connectionStatus.classList.add('disconnected');
-        
-        // Try to reconnect after 5 seconds
-        setTimeout(connectWebSocket, 5000);
+        setTimeout(connectWebSocket, 3000); // Retry
+    };
+
+    socket.onerror = function (error) {
+        console.error('WebSocket error:', error);
+        connectionStatus.textContent = 'Gesture Server: Connection Error';
+        connectionStatus.classList.remove('connected');
+        connectionStatus.classList.add('disconnected');
+    };
+
+    socket.onmessage = function (event) {
+        const command = event.data;
+        console.log('Received command:', command);
+
+        switch (command) {
+            case 'next_page': pdfViewer.nextPage(); break;
+            case 'prev_page': pdfViewer.prevPage(); break;
+            case 'zoom_in': pdfViewer.zoomIn(); break;
+            case 'zoom_out': pdfViewer.zoomOut(); break;
+            case 'fit_screen': pdfViewer.fitScreen(); break;
+        }
+    };
+}
+
+function enableManualControls() {
+    const manualControls = document.getElementById('manual-controls-container');
+    manualControls.style.display = 'block';
+
+    document.getElementById('prev-page-btn').addEventListener('click', () => pdfViewer.prevPage());
+    document.getElementById('next-page-btn').addEventListener('click', () => pdfViewer.nextPage());
+    document.getElementById('zoom-in-btn').addEventListener('click', () => pdfViewer.zoomIn());
+    document.getElementById('zoom-out-btn').addEventListener('click', () => pdfViewer.zoomOut());
+    document.getElementById('fit-screen-btn').addEventListener('click', () => pdfViewer.fitScreen());
+}
+
+class PDFViewer {
+    constructor() {
+        this.pdfDoc = null;
+        this.currentPage = 1;
+        this.scale = 1.0;
+        this.initElements();
+        this.loadDocument();
+    }
+
+    initElements() {
+        this.canvas = document.getElementById('pdf-render');
+        this.ctx = this.canvas.getContext('2d');
+        this.documentPreview = document.getElementById('document-preview');
+        this.pageInfo = document.createElement('div');
+        this.pageInfo.className = 'page-info';
+        this.canvas.parentNode.appendChild(this.pageInfo);
+    }
+
+    loadDocument() {
+        const storedDoc = sessionStorage.getItem('currentDocument');
+        if (!storedDoc) {
+            alert('No document found. Please upload a document first.');
+            window.location.href = 'hand-gestures.html';
+            return;
+        }
+
+        const docInfo = JSON.parse(storedDoc);
+        if (docInfo.preview) {
+            this.documentPreview.innerHTML = docInfo.preview;
+        }
+
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://mozilla.github.io/pdf.js/build/pdf.worker.js';
+
+        pdfjsLib.getDocument(docInfo.url).promise
+            .then(pdf => {
+                this.pdfDoc = pdf;
+                this.renderPage(this.currentPage);
+            })
+            .catch(err => {
+                console.error('Error loading PDF:', err);
+                alert('Error loading PDF document.');
+            });
+    }
+
+    renderPage(pageNum) {
+        if (!this.pdfDoc) return;
+
+        this.currentPage = Math.max(1, Math.min(pageNum, this.pdfDoc.numPages));
+        this.updatePageInfo();
+
+        this.pdfDoc.getPage(this.currentPage).then(page => {
+            const viewport = page.getViewport({ scale: this.scale });
+            this.canvas.height = viewport.height;
+            this.canvas.width = viewport.width;
+            page.render({ canvasContext: this.ctx, viewport: viewport });
+        });
+    }
+
+    updatePageInfo() {
+        if (this.pdfDoc) {
+            this.pageInfo.textContent = `Page ${this.currentPage} of ${this.pdfDoc.numPages} | Zoom: ${Math.round(this.scale * 100)}%`;
+        }
+    }
+
+    zoomIn() {
+        this.scale = Math.min(this.scale + 0.25, 3.0);
+        this.renderPage(this.currentPage);
+    }
+
+    zoomOut() {
+        this.scale = Math.max(this.scale - 0.25, 0.5);
+        this.renderPage(this.currentPage);
+    }
+
+    fitScreen() {
+        if (!this.pdfDoc) return;
+
+        this.pdfDoc.getPage(this.currentPage).then(page => {
+            const container = document.getElementById('pdf-container');
+            const containerWidth = container.clientWidth - 40;
+            const viewport = page.getViewport({ scale: 1.0 });
+            this.scale = containerWidth / viewport.width;
+            this.renderPage(this.currentPage);
+        });
+    }
+
+    prevPage() {
+        if (this.currentPage > 1) this.renderPage(this.currentPage - 1);
+    }
+
+    nextPage() {
+        if (this.currentPage < this.pdfDoc.numPages) this.renderPage(this.currentPage + 1);
     }
 }
 
-// Initialize connection when page loads
 document.addEventListener('DOMContentLoaded', () => {
     connectWebSocket();
-});
+    window.pdfViewer = new PDFViewer();
+    setTimeout(() => pdfViewer.fitScreen(), 500);
+    enableManualControls();
 
-        function enableManualControls() {
-            const manualControls = document.getElementById('manual-controls-container');
-            manualControls.style.display = 'block';
-            
-            // Add event listeners for manual controls
-            document.getElementById('prev-page-btn').addEventListener('click', () => pdfViewer.prevPage());
-            document.getElementById('next-page-btn').addEventListener('click', () => pdfViewer.nextPage());
-            document.getElementById('zoom-in-btn').addEventListener('click', () => pdfViewer.zoomIn());
-            document.getElementById('zoom-out-btn').addEventListener('click', () => pdfViewer.zoomOut());
-            document.getElementById('fit-screen-btn').addEventListener('click', () => pdfViewer.fitScreen());
+    const toggleCameraBtn = document.getElementById('toggle-camera');
+    const cameraStatus = document.getElementById('camera-status');
+    const cameraFeed = document.getElementById('camera-feed');
+    const gestureOverlay = document.getElementById('gesture-overlay');
+    let cameraActive = false;
+
+    toggleCameraBtn.addEventListener('click', async () => {
+        try {
+            if (!cameraActive) {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                cameraFeed.srcObject = stream;
+                cameraFeed.onloadedmetadata = () => {
+                    cameraFeed.play();
+                    cameraFeed.style.display = 'block';
+                    gestureOverlay.style.display = 'block';
+                    cameraStatus.textContent = 'ON';
+                    cameraStatus.className = 'camera-status on';
+                    toggleCameraBtn.innerHTML = '<i class="fas fa-video-slash"></i> Toggle Camera';
+                    cameraActive = true;
+                };
+            } else {
+                const stream = cameraFeed.srcObject;
+                stream.getTracks().forEach(track => track.stop());
+                cameraFeed.srcObject = null;
+                cameraFeed.style.display = 'none';
+                gestureOverlay.style.display = 'none';
+                cameraStatus.textContent = 'OFF';
+                cameraStatus.className = 'camera-status off';
+                toggleCameraBtn.innerHTML = '<i class="fas fa-video"></i> Toggle Camera';
+                cameraActive = false;
+            }
+        } catch (error) {
+            console.error('Error accessing camera:', error);
+            alert('Could not access the camera. Please ensure you have granted camera permissions.');
+            cameraStatus.textContent = 'ERROR';
+            cameraStatus.className = 'camera-status off';
         }
+    });
 
-        // PDF Viewer Class
-        class PDFViewer {
-            constructor() {
-                this.pdfDoc = null;
-                this.currentPage = 1;
-                this.scale = 1.0;
-                this.initElements();
-                this.loadDocument();
-            }
-            
-            initElements() {
-                this.canvas = document.getElementById('pdf-render');
-                this.ctx = this.canvas.getContext('2d');
-                this.documentPreview = document.getElementById('document-preview');
-                this.pageInfo = document.createElement('div');
-                this.pageInfo.className = 'page-info';
-                this.canvas.parentNode.appendChild(this.pageInfo);
-            }
-            
-            loadDocument() {
-                const storedDoc = sessionStorage.getItem('currentDocument');
-                if (!storedDoc) {
-                    alert('No document found. Please upload a document first.');
-                    window.location.href = 'hand-gestures.html';
-                    return;
-                }
+    document.getElementById('calibrate-btn').addEventListener('click', () => {
+        alert('Calibration settings would be configured here');
+    });
 
-                const docInfo = JSON.parse(storedDoc);
-                
-                // Show preview
-                if (docInfo.preview) {
-                    this.documentPreview.innerHTML = docInfo.preview;
-                }
-                
-                // Initialize PDF.js
-                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://mozilla.github.io/pdf.js/build/pdf.worker.js';
-                
-                // Load PDF document
-                pdfjsLib.getDocument(docInfo.url).promise.then(pdf => {
-                    this.pdfDoc = pdf;
-                    this.updatePageInfo();
-                    this.renderPage(this.currentPage);
-                }).catch(err => {
-                    console.error('PDF loading error:', err);
-                    alert('Error loading PDF document');
-                });
-            }
-            
-            renderPage(pageNum) {
-                if (!this.pdfDoc) return;
-                
-                this.currentPage = Math.max(1, Math.min(pageNum, this.pdfDoc.numPages));
-                this.updatePageInfo();
-                
-                this.pdfDoc.getPage(this.currentPage).then(page => {
-                    const viewport = page.getViewport({ scale: this.scale });
-                    this.canvas.height = viewport.height;
-                    this.canvas.width = viewport.width;
-                    
-                    const renderContext = {
-                        canvasContext: this.ctx,
-                        viewport: viewport
-                    };
-                    
-                    page.render(renderContext);
-                });
-            }
-            
-            updatePageInfo() {
-                if (this.pdfDoc) {
-                    this.pageInfo.textContent = `Page ${this.currentPage} of ${this.pdfDoc.numPages} | Zoom: ${Math.round(this.scale * 100)}%`;
-                }
-            }
-            
-            zoomIn() {
-                this.scale = Math.min(this.scale + 0.25, 3.0);
-                this.renderPage(this.currentPage);
-            }
-            
-            zoomOut() {
-                this.scale = Math.max(this.scale - 0.25, 0.5);
-                this.renderPage(this.currentPage);
-            }
-            
-            fitScreen() {
-                if (!this.pdfDoc) return;
-                
-                this.pdfDoc.getPage(this.currentPage).then(page => {
-                    const container = document.getElementById('pdf-container');
-                    const containerWidth = container.clientWidth - 40; // Account for padding
-                    
-                    const viewport = page.getViewport({ scale: 1.0 });
-                    this.scale = containerWidth / viewport.width;
-                    
-                    this.renderPage(this.currentPage);
-                });
-            }
-            
-            prevPage() {
-                if (this.currentPage > 1) {
-                    this.renderPage(this.currentPage - 1);
-                }
-            }
-            
-            nextPage() {
-                if (this.pdfDoc && this.currentPage < this.pdfDoc.numPages) {
-                    this.renderPage(this.currentPage + 1);
-                }
-            }
-        }
-
-        // Initialize when DOM is loaded
-        document.addEventListener('DOMContentLoaded', () => {
-            // Initialize WebSocket connection
-            connectWebSocket();
-            
-            // Initialize PDF viewer
-            window.pdfViewer = new PDFViewer();
-            
-            // Fit screen initially
-            setTimeout(() => {
-                pdfViewer.fitScreen();
-            }, 500);
-
-            // Camera toggle functionality
-            const toggleCameraBtn = document.getElementById('toggle-camera');
-            const cameraStatus = document.getElementById('camera-status');
-            const cameraFeed = document.getElementById('camera-feed');
-            const gestureOverlay = document.getElementById('gesture-overlay');
-            let cameraActive = false;
-            
-            toggleCameraBtn.addEventListener('click', async () => {
-                try {
-                    if (!cameraActive) {
-                        // Start camera
-                        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                        cameraFeed.srcObject = stream;
-                        cameraFeed.style.display = 'block';
-                        gestureOverlay.style.display = 'block';
-                        cameraStatus.textContent = 'ON';
-                        cameraStatus.className = 'camera-status on';
-                        toggleCameraBtn.innerHTML = '<i class="fas fa-video-slash"></i> Toggle Camera';
-                        cameraActive = true;
-                    } else {
-                        // Stop camera
-                        const stream = cameraFeed.srcObject;
-                        const tracks = stream.getTracks();
-                        tracks.forEach(track => track.stop());
-                        cameraFeed.srcObject = null;
-                        cameraFeed.style.display = 'none';
-                        gestureOverlay.style.display = 'none';
-                        cameraStatus.textContent = 'OFF';
-                        cameraStatus.className = 'camera-status off';
-                        toggleCameraBtn.innerHTML = '<i class="fas fa-video"></i> Toggle Camera';
-                        cameraActive = false;
-                    }
-                } catch (error) {
-                    console.error('Error accessing camera:', error);
-                    alert('Could not access the camera. Please ensure you have granted camera permissions.');
-                    cameraStatus.textContent = 'ERROR';
-                    cameraStatus.className = 'camera-status off';
-                }
-            });
-
-            // Calibration button functionality
-            document.getElementById('calibrate-btn').addEventListener('click', () => {
-                alert('Calibration settings would be configured here');
-            });
-
-            // Mobile menu toggle
-            const hamburger = document.querySelector('.nav-hamburger');
-            const navMenu = document.querySelector('.nav-menu');
-            
-            if (hamburger) {
-                hamburger.addEventListener('click', function() {
-                    navMenu.classList.toggle('active');
-                    hamburger.classList.toggle('active');
-                });
-            }
+    const hamburger = document.querySelector('.nav-hamburger');
+    const navMenu = document.querySelector('.nav-menu');
+    if (hamburger) {
+        hamburger.addEventListener('click', () => {
+            navMenu.classList.toggle('active');
+            hamburger.classList.toggle('active');
         });
-    </script>
+    }
+});
+</script>
+
 </body>
 </html>

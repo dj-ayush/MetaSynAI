@@ -89,6 +89,8 @@
         .nav-hamburger {
             display: none;
             cursor: pointer;
+            color: white;
+            font-size: 1.5rem;
         }
         
         .tool-header {
@@ -373,9 +375,7 @@
                 <a href="contact.html" class="nav-link">Contact</a>
             </div>
             <div class="nav-hamburger">
-                <span class="bar"></span>
-                <span class="bar"></span>
-                <span class="bar"></span>
+                <i class="fas fa-bars"></i>
             </div>
         </div>
     </nav>
@@ -481,27 +481,12 @@
             if (hamburger) {
                 hamburger.addEventListener('click', function() {
                     navMenu.classList.toggle('active');
-                    hamburger.classList.toggle('active');
                 });
-            }
-
-            // Voice assistant variables
-            let recognition;
-            let currentFileId;
-            let currentSessionId;
-            let currentPage = 0;
-            let isReading = false;
-            const voiceStatus = document.getElementById('voice-status');
-            const statusText = document.getElementById('status-text');
-            const commandFeedback = document.getElementById('command-feedback');
-            
-            // Generate a unique session ID
-            function generateSessionId() {
-                return 'session-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
             }
 
             // Show command feedback
             function showFeedback(message) {
+                const commandFeedback = document.getElementById('command-feedback');
                 commandFeedback.textContent = message;
                 commandFeedback.style.display = 'block';
                 setTimeout(() => {
@@ -511,6 +496,8 @@
 
             // Update voice status
             function updateStatus(message, isActive = false) {
+                const voiceStatus = document.getElementById('voice-status');
+                const statusText = document.getElementById('status-text');
                 statusText.textContent = message;
                 voiceStatus.style.display = 'block';
                 voiceStatus.style.backgroundColor = isActive ? 'rgba(46, 125, 50, 0.3)' : 'rgba(0, 0, 0, 0.2)';
@@ -518,7 +505,7 @@
 
             // File upload handler
             const fileInput = document.getElementById('file-upload');
-            fileInput.addEventListener('change', async function(e) {
+            fileInput.addEventListener('change', function(e) {
                 const file = e.target.files[0];
                 const previewContainer = document.getElementById('preview-container');
                 
@@ -539,175 +526,70 @@
                 previewContainer.innerHTML = '<p>Uploading file...</p>';
                 
                 try {
-                    const formData = new FormData();
-                    formData.append('file', file);
+                    // Create object URL for the file
+                    const fileUrl = URL.createObjectURL(file);
                     
-                    const response = await fetch('/api/voice/upload', {
-                        method: 'POST',
-                        body: formData
-                    });
+                    // Display the file preview
+                    previewContainer.innerHTML = '';
                     
-                    const data = await response.json();
-                    
-                    if (response.ok) {
-                        // Store file ID for later use
-                        currentFileId = data.file.id;
-                        currentSessionId = generateSessionId();
-                        
-                        previewContainer.innerHTML = '';
-                        
-                        if (file.type === 'application/pdf') {
-                            const objectEl = document.createElement('object');
-                            objectEl.data = URL.createObjectURL(file);
-                            objectEl.type = 'application/pdf';
-                            objectEl.width = '100%';
-                            objectEl.height = '100%';
-                            objectEl.style.borderRadius = '8px';
-                            previewContainer.appendChild(objectEl);
-                        } else {
-                            const fileInfo = document.createElement('div');
-                            fileInfo.innerHTML = `
-                                <i class="fas fa-file-word" style="font-size: 4rem; color: #2b579a;"></i>
-                                <h3 style="margin: 1rem 0;">${file.name}</h3>
-                                <p>${(file.size / (1024*1024)).toFixed(2)} MB</p>
-                            `;
-                            previewContainer.appendChild(fileInfo);
-                        }
-                        
-                        const buttonContainer = document.createElement('div');
-                        buttonContainer.className = 'button-container';
-                        
-                        const downloadBtn = document.createElement('button');
-                        downloadBtn.className = 'file-label';
-                        downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download File';
-                        downloadBtn.onclick = function() {
-                            const a = document.createElement('a');
-                            a.href = URL.createObjectURL(file);
-                            a.download = file.name;
-                            a.click();
-                        };
-                        
-                        const demoBtn = document.createElement('button');
-                        demoBtn.className = 'demo-btn';
-                        demoBtn.innerHTML = '<i class="fas fa-robot"></i> Start Voice Assistant';
-                        demoBtn.onclick = function() {
-                            startVoiceAssistant(currentFileId, currentSessionId);
-                        };
-                        
-                        buttonContainer.appendChild(downloadBtn);
-                        buttonContainer.appendChild(demoBtn);
-                        previewContainer.appendChild(buttonContainer);
-                        
-                        updateStatus('Ready for voice commands');
+                    if (file.type === 'application/pdf') {
+                        const objectEl = document.createElement('object');
+                        objectEl.data = fileUrl;
+                        objectEl.type = 'application/pdf';
+                        objectEl.width = '100%';
+                        objectEl.height = '100%';
+                        objectEl.style.borderRadius = '8px';
+                        previewContainer.appendChild(objectEl);
                     } else {
-                        throw new Error(data.message || 'Failed to upload file');
+                        const fileInfo = document.createElement('div');
+                        fileInfo.innerHTML = `
+                            <i class="fas fa-file-word" style="font-size: 4rem; color: #2b579a;"></i>
+                            <h3 style="margin: 1rem 0;">${file.name}</h3>
+                            <p>${(file.size / (1024*1024)).toFixed(2)} MB</p>
+                        `;
+                        previewContainer.appendChild(fileInfo);
                     }
+                    
+                    const buttonContainer = document.createElement('div');
+                    buttonContainer.className = 'button-container';
+                    
+                    const downloadBtn = document.createElement('button');
+                    downloadBtn.className = 'file-label';
+                    downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download File';
+                    downloadBtn.onclick = function() {
+                        const a = document.createElement('a');
+                        a.href = fileUrl;
+                        a.download = file.name;
+                        a.click();
+                    };
+                    
+                    const viewBtn = document.createElement('button');
+                    viewBtn.className = 'demo-btn';
+                    viewBtn.innerHTML = '<i class="fas fa-eye"></i> View in PDF Viewer';
+                   viewBtn.onclick = function() {
+    const reader = new FileReader();
+    reader.onload = function() {
+        const dataUrl = reader.result;
+        sessionStorage.setItem('currentPdfData', JSON.stringify({
+            dataUrl: dataUrl,
+            fileName: file.name
+        }));
+        window.location.href = 'voice_accessible.html';
+    };
+    reader.readAsDataURL(file);
+};
+
+                    
+                    buttonContainer.appendChild(downloadBtn);
+                    buttonContainer.appendChild(viewBtn);
+                    previewContainer.appendChild(buttonContainer);
+                    
+                    updateStatus('Ready for viewing');
                 } catch (err) {
                     console.error('Upload error:', err);
                     previewContainer.innerHTML = `<p style="color: red;">Error: ${err.message}</p>`;
                 }
             });
-
-            // Voice assistant functionality
-            function startVoiceAssistant(fileId, sessionId) {
-                currentFileId = fileId;
-                currentSessionId = sessionId;
-                
-                // Check if browser supports speech recognition
-                if (!('webkitSpeechRecognition' in window)) {
-                    alert('Your browser does not support speech recognition. Please use Chrome or Edge.');
-                    return;
-                }
-                
-                recognition = new webkitSpeechRecognition();
-                recognition.continuous = true;
-                recognition.interimResults = true;
-                
-                recognition.onstart = function() {
-                    updateStatus('Listening for commands...', true);
-                    showFeedback('Voice assistant activated. Start speaking your commands.');
-                };
-                
-                recognition.onresult = async function(event) {
-                    const transcript = Array.from(event.results)
-                        .map(result => result[0])
-                        .map(result => result.transcript)
-                        .join('');
-                    
-                    if (event.results[0].isFinal) {
-                        showFeedback(`Command: ${transcript}`);
-                        await processCommand(transcript, fileId, sessionId);
-                    }
-                };
-                
-                recognition.onerror = function(event) {
-                    console.error('Speech recognition error', event.error);
-                    updateStatus('Error: ' + event.error);
-                };
-                
-                recognition.onend = function() {
-                    if (isReading) {
-                        recognition.start(); // Restart recognition if we're in reading mode
-                    } else {
-                        updateStatus('Voice assistant stopped');
-                    }
-                };
-                
-                recognition.start();
-            }
-
-            async function processCommand(command, fileId, sessionId) {
-                try {
-                    const response = await fetch('/api/voice/command', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            command: command.trim(),
-                            fileId: fileId,
-                            sessionId: sessionId
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (response.ok) {
-                        // Handle the response from the backend
-                        console.log('Command response:', data);
-                        
-                        // Update reading state
-                        isReading = data.action === 'read';
-                        
-                        // Update current page if navigation occurred
-                        if (data.action === 'navigate') {
-                            currentPage = data.currentPage;
-                        }
-                        
-                        // Speak the response message
-                        const utterance = new SpeechSynthesisUtterance(data.message);
-                        window.speechSynthesis.speak(utterance);
-                        
-                        // Update status
-                        updateStatus(data.message, isReading);
-                    } else {
-                        throw new Error(data.message || 'Command failed');
-                    }
-                } catch (err) {
-                    console.error('Command error:', err);
-                    const utterance = new SpeechSynthesisUtterance("Sorry, I couldn't process that command.");
-                    window.speechSynthesis.speak(utterance);
-                    updateStatus("Command error");
-                }
-            }
-
-            // Common commands helper
-            function registerCommonCommands() {
-                // You can add global keyboard shortcuts here if needed
-            }
-
-            // Initialize
-            registerCommonCommands();
         });
     </script>
 </body>

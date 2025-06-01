@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Accessible PDF Viewer | Accessibility Hub</title>
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,900" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: #0f0f1a;
+            color: white;
+            position: relative;
+            min-height: 100vh;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #particles-js {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+        
+        .container {
+            position: relative;
+            z-index: 1;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 80px auto 0;
+            flex: 1;
+            padding-bottom: 150px;
+        }
+        
+        .navbar {
+            background: rgba(30, 30, 50, 0.85);
+            padding: 1rem 2rem;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        
+        .nav-container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .nav-logo {
+            color: #e0e0ff;
+            font-weight: 700;
+            font-size: 1.5rem;
+            text-decoration: none;
+        }
+        
+        .nav-menu {
+            display: flex;
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            color: #c0c0ff;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+            padding: 0.5rem 0;
+        }
+        
+        .nav-link:hover {
+            color: #ffffff;
+        }
+        
+        .nav-hamburger {
+            display: none;
+            cursor: pointer;
+            color: white;
+            font-size: 1.5rem;
+        }
+        
+        .tool-header {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            text-align: center;
+        }
+        
+        .tool-title {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .tool-description {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .pdf-viewer-container {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 800px;
+            margin: 2rem auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+        }
+        
+        .pdf-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 0.5rem 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+        
+        .page-info {
+            font-weight: 600;
+            color: #e0e0ff;
+        }
+        
+        .voice-status {
+            text-align: center;
+            margin-top: 1rem;
+            padding: 0.5rem;
+            border-radius: 5px;
+            background: rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .voice-status.active {
+            background: rgba(46, 125, 50, 0.3);
+        }
+        
+        .pdf-canvas-container {
+            margin-top: 1rem;
+            overflow-y: auto;
+            max-height: 70vh;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.1);
+            padding: 1rem;
+        }
+        
+        .pdf-canvas {
+            margin-bottom: 1rem;
+            width: 100%;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+        
+        .command-feedback {
+            position: fixed;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 20px;
+            color: white;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .demo-btn {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .demo-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .preview-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 300px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .footer {
+            background: rgba(30, 30, 50, 0.95);
+            padding: 2rem;
+            width: 100%;
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            z-index: 10;
+            margin-top: auto;
+        }
+        
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        
+        .footer-logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #e0e0ff;
+        }
+        
+        .footer-social {
+            display: flex;
+            gap: 1.5rem;
+        }
+        
+        .social-link {
+            color: #c0c0ff;
+            font-size: 1.8rem;
+            transition: color 0.3s ease;
+        }
+        
+        .social-link:hover {
+            color: #ffffff;
+        }
+        
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .footer-link {
+            color: #c0c0ff;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .footer-link:hover {
+            color: #ffffff;
+        }
+        
+        .footer-copyright {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+                position: fixed;
+                top: 70px;
+                left: 0;
+                width: 100%;
+                background: rgba(30, 30, 50, 0.95);
+                flex-direction: column;
+                padding: 1rem;
+                gap: 1rem;
+            }
+            
+            .nav-menu.active {
+                display: flex;
+            }
+            
+            .nav-hamburger {
+                display: block;
+            }
+            
+            .pdf-viewer-container {
+                padding: 1rem;
+            }
+            
+            .pdf-controls {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .footer-social {
+                gap: 1rem;
+            }
+            
+            .social-link {
+                font-size: 1.5rem;
+            }
+            
+            .container {
+                padding-bottom: 180px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="particles-js"></div>
+    
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">Accessibility Hub</a>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="about.html" class="nav-link">About</a>
+                <a href="services.html" class="nav-link">Services</a>
+                <a href="contact.html" class="nav-link">Contact</a>
+            </div>
+            <div class="nav-hamburger">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="tool-header">
+            <h1 class="tool-title">Voice Accessible PDF Viewer</h1>
+            <p class="tool-description">Control your PDF with voice commands</p>
+        </div>
+        
+        <div class="pdf-viewer-container">
+            <div class="pdf-controls">
+                <div class="page-info" id="page-info">No PDF loaded</div>
+                <div>
+                    <button id="voice-commands-btn" class="demo-btn">
+                        <i class="fas fa-microphone"></i> Voice Commands
+                    </button>
+                    <button id="upload-new-btn" class="demo-btn" style="margin-left: 10px;">
+                        <i class="fas fa-upload"></i> Upload New
+                    </button>
+                </div>
+            </div>
+            
+            <div class="voice-status" id="voice-status">
+                <i class="fas fa-microphone"></i>
+                <span id="status-text">Voice assistant is ready</span>
+            </div>
+            
+            <div class="pdf-canvas-container" id="pdf-canvas-container">
+                <div class="preview-placeholder">
+                    <i class="far fa-file-pdf" style="font-size: 3rem; color: #e0e0ff; margin-bottom: 1rem;"></i>
+                    <p>No PDF file loaded</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="command-feedback" id="command-feedback"></div>
+
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-logo">Accessibility Hub</div>
+            <div class="footer-social">
+                <a href="https://wa.me/9567942625" target="_blank" class="social-link">
+                    <i class="fab fa-whatsapp"></i>
+                </a>
+                <a href="https://www.linkedin.com/in/ayush7ag" target="_blank" class="social-link">
+                    <i class="fab fa-linkedin-in"></i>
+                </a>
+                <a href="https://x.com/_7ayush" target="_blank" class="social-link">
+                    <i class="fab fa-twitter"></i>
+                </a>
+                <a href="https://www.instagram.com/_ayush.ag" target="_blank" class="social-link">
+                    <i class="fab fa-instagram"></i>
+                </a>
+            </div>
+            <div class="footer-links">
+                <a href="privacy-policy.html" class="footer-link">Privacy Policy</a>
+                <a href="terms-of-service.html" class="footer-link">Terms of Service</a>
+                <a href="contact.html" class="footer-link">Contact Us</a>
+            </div>
+            <div class="footer-copyright">
+                &copy; 2025 Accessibility Hub. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    
+    <script>
+        // Initialize PDF.js
+        const pdfjsLib = window['pdfjs-dist/build/pdf'];
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.worker.min.js';
+        
+        const uploadScale = 2; // pdf resolution
+        let pdfDoc = null;
+        let renderCount = 0;
+        let renderingFinished = false;
+        let fileName = "";
+        let currentPage = 1;
+        let isListening = false;
+        
+        const command = {
+            UP: 0,
+            DOWN: 1,
+            TOP: 2,
+            MIDDLE: 3,
+            BOTTOM: 4,
+            PREVIOUS: 5,
+            NEXT: 6,
+            FIRST: 7,
+            LAST: 8
+        }
+        
+        let commandState = command.TOP;
+        let recognition;
+        const voiceStatus = document.getElementById('voice-status');
+        const statusText = document.getElementById('status-text');
+        const commandFeedback = document.getElementById('command-feedback');
+        const pageInfo = document.getElementById('page-info');
+        const pdfCanvasContainer = document.getElementById('pdf-canvas-container');
+        const voiceCommandsBtn = document.getElementById('voice-commands-btn');
+
+        // Initialize particles
+        particlesJS('particles-js', {
+            particles: {
+                number: { value: 80, density: { enable: true, value_area: 800 } },
+                color: { value: "#ffffff" },
+                shape: { type: "circle" },
+                opacity: { value: 0.3, random: true },
+                size: { value: 3, random: true },
+                line_linked: { enable: true, distance: 150, color: "#ffffff", opacity: 0.2, width: 1 },
+                move: { enable: true, speed: 1, direction: "none" }
+            },
+            interactivity: {
+                detect_on: "canvas",
+                events: {
+                    onhover: { enable: true, mode: "grab" },
+                    onclick: { enable: true, mode: "push" },
+                    resize: true
+                }
+            }
+        });
+
+        // Hamburger menu toggle
+        const hamburger = document.querySelector('.nav-hamburger');
+        const navMenu = document.querySelector('.nav-menu');
+        
+        if (hamburger) {
+            hamburger.addEventListener('click', function() {
+                navMenu.classList.toggle('active');
+            });
+        }
+
+        // Show command feedback
+        function showFeedback(message) {
+            commandFeedback.textContent = message;
+            commandFeedback.style.display = 'block';
+            setTimeout(() => {
+                commandFeedback.style.display = 'none';
+            }, 3000);
+        }
+
+        // Update voice status
+        function updateStatus(message, isActive = false) {
+            statusText.textContent = message;
+            voiceStatus.style.display = 'flex';
+            voiceStatus.classList.toggle('active', isActive);
+        }
+
+        function renderPage(num, canvas, ctx) {
+            pdfDoc.getPage(num).then(function (page) {
+                var viewport = page.getViewport({ scale: uploadScale });
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                var renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+                var renderTask = page.render(renderContext);
+                renderTask.promise.then(function () {
+                    console.log(`Page ${num}/${pdfDoc.numPages} rendering finished`);
+                    if (++renderCount === pdfDoc.numPages) {
+                        console.log("All pages rendering finished");
+                        renderingFinished = true;
+                    }
+                });
+            });
+        }
+
+        function renderAllPages(pdfDoc_) {
+            pdfDoc = pdfDoc_;
+            window.scrollTo(0, 0);
+            currentPage = 1;
+            pageInfo.textContent = `1 / ${pdfDoc.numPages}`;
+            pdfCanvasContainer.innerHTML = "";
+            renderCount = 0;
+            renderingFinished = false;
+            
+            for (let i = 0; i < pdfDoc.numPages; i++) {
+                const canvas = document.createElement("canvas");
+                canvas.classList.add("pdf-canvas");
+                if (i > 0) {
+                    canvas.classList.add("page-break");
+                }
+                canvas.id = `canvas${i}`;
+                pdfCanvasContainer.appendChild(canvas);
+                const ctx = canvas.getContext("2d");
+                renderPage(i + 1, canvas, ctx);
+            }
+        }
+
+        function loadPDFFromUrl(url) {
+            updateStatus('Loading PDF...');
+            
+            // First try to load from sessionStorage
+            const sessionData = sessionStorage.getItem('currentPdfData');
+            if (sessionData) {
+                try {
+                    const pdfData = JSON.parse(sessionData);
+                    loadPDFFromDataUrl(pdfData.dataUrl);
+                    return;
+                } catch (e) {
+                    console.log('No valid PDF data in sessionStorage');
+                }
+            }
+
+            // If no session data, proceed with URL loading
+            if (url.startsWith('blob:')) {
+                // Convert blob URL to data URL
+                fetch(url)
+                    .then(response => {
+                        if (!response.ok) throw new Error('Network response was not ok');
+                        return response.blob();
+                    })
+                    .then(blob => {
+                        const reader = new FileReader();
+                        reader.onload = function() {
+                            const dataUrl = reader.result;
+                            // Store in sessionStorage for reliability
+                            sessionStorage.setItem('currentPdfData', JSON.stringify({
+                                dataUrl: dataUrl,
+                                fileName: fileName || 'uploaded_file.pdf'
+                            }));
+                            loadPDFFromDataUrl(dataUrl);
+                        };
+                        reader.onerror = function() {
+                            throw new Error('FileReader error');
+                        };
+                        reader.readAsDataURL(blob);
+                    })
+                    .catch(error => {
+                        console.error('PDF loading error:', error);
+                        updateStatus('Failed to load PDF');
+                        showFeedback('Failed to load PDF. Please try uploading again.');
+                        // Fallback to file upload
+                        document.getElementById('upload-new-btn').style.display = 'inline-block';
+                    });
+            } else if (url.startsWith('data:')) {
+                // Directly load data URL
+                loadPDFFromDataUrl(url);
+            } else {
+                // Standard PDF URL
+                pdfjsLib.getDocument(url).promise.then(function (pdfDoc_) {
+                    fileName = decodeURIComponent(url.substring(url.lastIndexOf("/") + 1));
+                    updateStatus(`Loaded: ${fileName}`);
+                    renderAllPages(pdfDoc_);
+                }).catch(function(error) {
+                    console.error('PDF loading error:', error);
+                    updateStatus('Failed to load PDF');
+                    showFeedback('Failed to load PDF. Please try uploading again.');
+                    document.getElementById('upload-new-btn').style.display = 'inline-block';
+                });
+            }
+        }
+
+        function loadPDFFromDataUrl(dataUrl) {
+            pdfjsLib.getDocument(dataUrl).promise.then(function (pdfDoc_) {
+                // Get filename from sessionStorage if available
+                const sessionData = sessionStorage.getItem('currentPdfData');
+                if (sessionData) {
+                    try {
+                        const pdfData = JSON.parse(sessionData);
+                        fileName = pdfData.fileName;
+                    } catch (e) {
+                        fileName = "uploaded_file.pdf";
+                    }
+                } else {
+                    fileName = "uploaded_file.pdf";
+                }
+                
+                updateStatus(`Loaded: ${fileName}`);
+                renderAllPages(pdfDoc_);
+            }).catch(function(error) {
+                console.error('PDF loading error:', error);
+                updateStatus('Failed to load PDF');
+                showFeedback('Failed to load PDF. Please try uploading again.');
+                document.getElementById('upload-new-btn').style.display = 'inline-block';
+            });
+        }
+
+        function handleFileUpload(file) {
+            if (!file) return;
+            
+            if (file.type !== 'application/pdf') {
+                showFeedback('Please upload only PDF files');
+                return;
+            }
+            
+            fileName = file.name;
+            updateStatus('Processing PDF...');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const dataUrl = e.target.result;
+                // Store in sessionStorage
+                sessionStorage.setItem('currentPdfData', JSON.stringify({
+                    dataUrl: dataUrl,
+                    fileName: fileName
+                }));
+                loadPDFFromDataUrl(dataUrl);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function scrollToPage(pageNum) {
+            if (!pdfDoc || pageNum < 1 || pageNum > pdfDoc.numPages) return;
+            
+            const canvas = document.getElementById(`canvas${pageNum - 1}`);
+            if (!canvas) return;
+            
+            const canvasRect = canvas.getBoundingClientRect();
+            const navbarHeight = document.querySelector('.navbar').offsetHeight;
+            
+            window.scrollTo({
+                top: canvas.offsetTop - navbarHeight,
+                left: 0,
+                behavior: "smooth"
+            });
+            
+            currentPage = pageNum;
+            pageInfo.textContent = `${currentPage} / ${pdfDoc.numPages}`;
+            commandState = command.TOP;
+        }
+
+        function scroll(newCommandState) {
+            if (!pdfDoc) return;
+            
+            if (newCommandState === command.FIRST) {
+                scrollToPage(1);
+                return;
+            }
+            else if (newCommandState === command.LAST) {
+                scrollToPage(pdfDoc.numPages);
+                return;
+            }
+            else if (newCommandState === command.PREVIOUS) {
+                if (currentPage > 1) {
+                    scrollToPage(currentPage - 1);
+                }
+                return;
+            }
+            else if (newCommandState === command.NEXT) {
+                if (currentPage < pdfDoc.numPages) {
+                    scrollToPage(currentPage + 1);
+                }
+                return;
+            }
+            
+            const canvas = document.getElementById(`canvas${currentPage - 1}`);
+            if (!canvas) return;
+            
+            const canvasRect = canvas.getBoundingClientRect();
+            const windowHeight = window.innerHeight;
+            const navbarHeight = document.querySelector('.navbar').offsetHeight;
+            
+            let scrollPosition;
+            
+            switch (newCommandState) {
+                case command.TOP:
+                    scrollPosition = canvas.offsetTop - navbarHeight;
+                    commandState = command.TOP;
+                    break;
+                case command.MIDDLE:
+                    scrollPosition = canvas.offsetTop - navbarHeight + (canvasRect.height - windowHeight) * 0.5;
+                    commandState = command.MIDDLE;
+                    break;
+                case command.BOTTOM:
+                    scrollPosition = canvas.offsetTop - navbarHeight + (canvasRect.height - windowHeight);
+                    commandState = command.BOTTOM;
+                    break;
+                case command.UP:
+                    if (commandState === command.TOP && currentPage > 1) {
+                        scrollToPage(currentPage - 1);
+                        commandState = command.BOTTOM;
+                        return;
+                    } else if (commandState === command.MIDDLE) {
+                        scrollPosition = canvas.offsetTop - navbarHeight;
+                        commandState = command.TOP;
+                    } else if (commandState === command.BOTTOM) {
+                        scrollPosition = canvas.offsetTop - navbarHeight + (canvasRect.height - windowHeight) * 0.5;
+                        commandState = command.MIDDLE;
+                    }
+                    break;
+                case command.DOWN:
+                    if (commandState === command.BOTTOM && currentPage < pdfDoc.numPages) {
+                        scrollToPage(currentPage + 1);
+                        commandState = command.TOP;
+                        return;
+                    } else if (commandState === command.MIDDLE) {
+                        scrollPosition = canvas.offsetTop - navbarHeight + (canvasRect.height - windowHeight);
+                        commandState = command.BOTTOM;
+                    } else if (commandState === command.TOP) {
+                        scrollPosition = canvas.offsetTop - navbarHeight + (canvasRect.height - windowHeight) * 0.5;
+                        commandState = command.MIDDLE;
+                    }
+                    break;
+                default:
+                    return;
+            }
+            
+            window.scrollTo({
+                top: scrollPosition,
+                left: 0,
+                behavior: "smooth"
+            });
+        }
+
+        function startVoiceRecognition() {
+            if (!('webkitSpeechRecognition' in window)) {
+                alert('Your browser does not support speech recognition. Please use Chrome or Edge.');
+                return;
+            }
+            
+            if (isListening) {
+                recognition.stop();
+                return;
+            }
+            
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = false;
+            recognition.lang = "en-US";
+            
+            recognition.onstart = function() {
+                isListening = true;
+                voiceCommandsBtn.innerHTML = '<i class="fas fa-microphone-slash"></i> Stop Listening';
+                updateStatus('Listening for commands...', true);
+                showFeedback('Voice assistant activated. Start speaking your commands.');
+            };
+            
+            recognition.onresult = function(event) {
+                const speechResult = event.results[0][0].transcript.toLowerCase();
+                console.log("You said:", speechResult);
+                showFeedback(`Command: ${speechResult}`);
+                
+                if (speechResult.includes("up")) {
+                    scroll(command.UP);
+                }
+                else if (speechResult.includes("down")) {
+                    scroll(command.DOWN);
+                }
+                else if (speechResult.includes("top")) {
+                    scroll(command.TOP);
+                }
+                else if (speechResult.includes("middle") || speechResult.includes("center")) {
+                    scroll(command.MIDDLE);
+                }
+                else if (speechResult.includes("bottom")) {
+                    scroll(command.BOTTOM);
+                }
+                else if (speechResult.includes("previous") || speechResult.includes("back")) {
+                    scroll(command.PREVIOUS);
+                }
+                else if (speechResult.includes("next")) {
+                    scroll(command.NEXT);
+                }
+                else if (speechResult.includes("first") || speechResult.includes("start")) {
+                    scroll(command.FIRST);
+                }
+                else if (speechResult.includes("last") || speechResult.includes("end")) {
+                    scroll(command.LAST);
+                }
+                else if (speechResult.includes("page")) {
+                    const pageNum = parseInt(speechResult.match(/\d+/)?.[0]);
+                    if (pageNum && pageNum >= 1 && pageNum <= pdfDoc.numPages) {
+                        scrollToPage(pageNum);
+                    }
+                }
+            };
+            
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error', event.error);
+                if (event.error !== 'no-speech') {
+                    updateStatus('Error: ' + event.error);
+                }
+            };
+            
+            recognition.onend = function() {
+                if (isListening) {
+                    // Automatically restart recognition if it ended unexpectedly
+                    setTimeout(() => {
+                        if (isListening) {
+                            recognition.start();
+                        }
+                    }, 100);
+                } else {
+                    voiceCommandsBtn.innerHTML = '<i class="fas fa-microphone"></i> Voice Commands';
+                    updateStatus('Voice assistant ready');
+                }
+            };
+            
+            recognition.start();
+        }
+
+        function stopVoiceRecognition() {
+            isListening = false;
+            if (recognition) {
+                recognition.stop();
+            }
+        }
+
+        document.getElementById('voice-commands-btn').addEventListener('click', function() {
+            if (isListening) {
+                stopVoiceRecognition();
+            } else {
+                const commandsList = [
+                    '"Scroll up": scroll up',
+                    '"Scroll down": scroll down',
+                    '"Scroll top": scroll to the top of the page',
+                    '"Scroll middle/center": scroll to the middle of the page',
+                    '"Scroll bottom": scroll to the bottom of the page',
+                    '"Previous/back": go to previous page',
+                    '"Next": go to next page',
+                    '"First/start": go to first page',
+                    '"Last/end": go to last page',
+                    '"Page [number]": go to specific page (e.g., "page 5")'
+                ].join('\n');
+                
+                alert('Available voice commands:\n\n' + commandsList);
+                startVoiceRecognition();
+            }
+        });
+
+        document.getElementById('upload-new-btn').addEventListener('click', function() {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'application/pdf';
+            fileInput.onchange = function(e) {
+                if (e.target.files.length > 0) {
+                    handleFileUpload(e.target.files[0]);
+                }
+            };
+            fileInput.click();
+        });
+
+        window.addEventListener("scroll", function() {
+            if (!pdfDoc) return;
+            
+            const canvases = document.getElementsByClassName("pdf-canvas");
+            const scrollPosition = window.scrollY + document.querySelector('.navbar').offsetHeight;
+            
+            for (let i = 0; i < canvases.length; i++) {
+                const canvas = canvases[i];
+                const canvasTop = canvas.offsetTop;
+                const canvasBottom = canvasTop + canvas.offsetHeight;
+                
+                if (scrollPosition >= canvasTop && scrollPosition < canvasBottom) {
+                    currentPage = i + 1;
+                    pageInfo.textContent = `${currentPage} / ${pdfDoc.numPages}`;
+                    break;
+                }
+            }
+        });
+
+        document.body.addEventListener("dragover", function (e) {
+            e.preventDefault();
+        });
+
+        document.body.addEventListener("drop", function (e) {
+            e.preventDefault();
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'application/pdf') {
+                handleFileUpload(file);
+            } else {
+                showFeedback('Please drop a PDF file');
+            }
+        });
+
+        // Load PDF when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check for PDF data in sessionStorage first
+            const sessionData = sessionStorage.getItem('currentPdfData');
+            if (sessionData) {
+                try {
+                    const pdfData = JSON.parse(sessionData);
+                    loadPDFFromDataUrl(pdfData.dataUrl);
+                    return;
+                } catch (e) {
+                    console.log('No valid PDF data in sessionStorage');
+                }
+            }
+
+            // If no session data, check URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const pdfUrl = urlParams.get('pdf');
+            
+            if (pdfUrl) {
+                loadPDFFromUrl(pdfUrl);
+            } else {
+                // Show upload button if no PDF is loaded
+                document.getElementById('upload-new-btn').style.display = 'inline-block';
+            }
+        });
+    </script>
+</body>
+</html>

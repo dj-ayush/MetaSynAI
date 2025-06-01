@@ -4,125 +4,113 @@ import numpy as np
 import fitz  # PyMuPDF
 import sys
 import time
-from flask import Flask, Response, send_file
 import os
 from docx2pdf import convert
-from PIL import Image
-import io
 
-app = Flask(__name__)
-
-# Get document path from command-line arguments
+# Get document path
 doc_path = sys.argv[1]
 is_pdf = doc_path.lower().endswith('.pdf')
 
-# Initialize document
-if is_pdf:
-    doc = fitz.open(doc_path)
-    page = doc.load_page(0)
-    rect = page.rect
-else:
-    # Convert Word to PDF first
+# Convert to PDF if Word doc
+if not is_pdf:
     pdf_path = os.path.splitext(doc_path)[0] + '.pdf'
     convert(doc_path, pdf_path)
-    doc = fitz.open(pdf_path)
-    page = doc.load_page(0)
-    rect = page.rect
+    doc_path = pdf_path
 
-mpHands = mp.solutions.hands
-hands = mpHands.Hands(
+# Load document
+doc = fitz.open(doc_path)
+total_pages = len(doc)
+current_page = 0
+zoom_factor = 1.0
+
+# Mediapipe Hand Detection
+mp_hands = mp.solutions.hands
+hands = mp_hands.Hands(
     static_image_mode=False,
     model_complexity=1,
     min_detection_confidence=0.75,
     min_tracking_confidence=0.75,
-    max_num_hands=2)
+    max_num_hands=2
+)
+draw_utils = mp.solutions.drawing_utils
 
-Draw = mp.solutions.drawing_utils
-
+# Open webcam
 cap = cv2.VideoCapture(0)
-zoom_factor = 1.0
-current_page = 0
+if not cap.isOpened():
+    print("Error: Could not open camera.")
+    sys.exit()
 
-def generate_frames():
-    global zoom_factor, current_page
-    
+prev_swipe_time = time.time()
+
+try:
     while True:
         success, frame = cap.read()
         if not success:
             break
-        else:
-            frame = cv2.flip(frame, 1)
-            frameRGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            Process = hands.process(frameRGB)
 
-            landmarkList = []
-            if Process.multi_hand_landmarks:
-                for handlm in Process.multi_hand_landmarks:
-                    for _id, landmarks in enumerate(handlm.landmark):
-                        height, width, _ = frame.shape
-                        x, y = int(landmarks.x * width), int(landmarks.y * height)
-                        landmarkList.append([_id, x, y])
-                    Draw.draw_landmarks(frame, handlm, mpHands.HAND_CONNECTIONS)
+        frame = cv2.flip(frame, 1)
+        h, w, _ = frame.shape
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        results = hands.process(rgb_frame)
 
-            if landmarkList:
-                # Get thumb (4) and index finger (8) tips
-                x_1, y_1 = landmarkList[4][1], landmarkList[4][2]
-                x_2, y_2 = landmarkList[8][1], landmarkList[8][2]
+        landmark_list = []
+        if results.multi_hand_landmarks:
+            for hand_landmarks in results.multi_hand_landmarks:
+                for idx, lm in enumerate(hand_landmarks.landmark):
+                    x, y = int(lm.x * w), int(lm.y * h)
+                    landmark_list.append([idx, x, y])
+                draw_utils.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
-                cv2.circle(frame, (x_1, y_1), 7, (0, 255, 0), cv2.FILLED)
-                cv2.circle(frame, (x_2, y_2), 7, (0, 255, 0), cv2.FILLED)
-                cv2.line(frame, (x_1, y_1), (x_2, y_2), (0, 255, 0), 3)
+        # Gesture control
+        if landmark_list:
+            x1, y1 = landmark_list[4][1], landmark_list[4][2]
+            x2, y2 = landmark_list[8][1], landmark_list[8][2]
+            cv2.circle(frame, (x1, y1), 7, (0, 255, 0), cv2.FILLED)
+            cv2.circle(frame, (x2, y2), 7, (0, 255, 0), cv2.FILLED)
+            cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 0), 3)
 
-                # Calculate distance between fingers for zoom
-                L = np.linalg.norm([x_2 - x_1, y_2 - y_1])
-                zoom_factor = np.interp(L, [15, 220], [0.5, 3.0])
+            distance = np.linalg.norm([x2 - x1, y2 - y1])
+            zoom_factor = np.interp(distance, [15, 220], [0.5, 3.0])
+            zoom_factor = max(0.5, min(zoom_factor, 3.0))  # safety clamp
 
-                # Page navigation with palm movement
-                wrist_x = landmarkList[0][1]
-                palm_base_x = landmarkList[9][1]
-                horizontal_movement = palm_base_x - wrist_x
+            # Swipe for page navigation (debounced)
+            now = time.time()
+            wrist_x = landmark_list[0][1]
+            palm_x = landmark_list[9][1]
+            diff = palm_x - wrist_x
 
-                if abs(horizontal_movement) > 100:  # Threshold for page turn
-                    if horizontal_movement > 0 and current_page > 0:  # Swipe right
-                        current_page -= 1
-                        page = doc.load_page(current_page)
-                        time.sleep(0.5)  # Debounce
-                    elif horizontal_movement < 0 and current_page < len(doc) - 1:  # Swipe left
-                        current_page += 1
-                        page = doc.load_page(current_page)
-                        time.sleep(0.5)  # Debounce
+            if abs(diff) > 100 and now - prev_swipe_time > 1.0:
+                if diff > 0 and current_page > 0:
+                    current_page -= 1
+                elif diff < 0 and current_page < total_pages - 1:
+                    current_page += 1
+                prev_swipe_time = now
 
-            # Render document page with zoom
+        # Render document page with zoom
+        try:
+            page = doc.load_page(current_page)
             matrix = fitz.Matrix(zoom_factor, zoom_factor)
             pix = page.get_pixmap(matrix=matrix, colorspace=fitz.csRGB, alpha=True)
-            img = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, 4)
-            img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
+            doc_img = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, 4)
+            doc_img = cv2.cvtColor(doc_img, cv2.COLOR_BGRA2BGR)
+        except Exception as e:
+            print(f"Rendering error: {e}")
+            continue
 
-            # Add page info overlay
-            cv2.putText(img, f"Page {current_page + 1}/{len(doc)}", (20, 30), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+        # Add page indicator
+        cv2.putText(doc_img, f"Page {current_page+1}/{total_pages}", (20, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
 
-            # Combine camera feed and document preview
-            combined = np.zeros((max(frame.shape[0], img.shape[0]), frame.shape[1] + img.shape[1], 3), dtype=np.uint8)
-            combined[:frame.shape[0], :frame.shape[1]] = frame
-            combined[:img.shape[0], frame.shape[1]:frame.shape[1]+img.shape[1]] = img
+        # Combine camera + document preview
+        h_combined = max(frame.shape[0], doc_img.shape[0])
+        combined = np.zeros((h_combined, frame.shape[1] + doc_img.shape[1], 3), dtype=np.uint8)
+        combined[:frame.shape[0], :frame.shape[1]] = frame
+        combined[:doc_img.shape[0], frame.shape[1]:frame.shape[1] + doc_img.shape[1]] = doc_img
 
-            ret, buffer = cv2.imencode('.jpg', combined)
-            frame = buffer.tobytes()
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        cv2.imshow("Gesture Zoom Assistant", combined)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
-@app.route('/video_feed')
-def video_feed():
-    return Response(generate_frames(),
-                   mimetype='multipart/x-mixed-replace; boundary=frame')
-
-@app.route('/document')
-def get_document():
-    if is_pdf:
-        return send_file(doc_path, as_attachment=True)
-    else:
-        return send_file(doc_path, as_attachment=True)
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5002)
+finally:
+    cap.release()
+    cv2.destroyAllWindows()
