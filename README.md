@@ -1,7 +1,12 @@
 
-
-
 # 🎛️ MetaSynAI
+![HTML5](https://img.shields.io/badge/HTML5-Markup-orange?logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-Styles-blue?logo=css3&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-Frontend-yellow?logo=javascript&logoColor=white)
+![OpenCV](https://img.shields.io/badge/OpenCV-Computer--Vision-green?logo=opencv&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.8%2B-blue?logo=python&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green.svg)
+![Stars](https://img.shields.io/github/stars/dj-ayush/MetaSynAI?style=social)
 
 **MetaSynAI** is an AI-powered accessibility framework that combines **voice commands**, **hand gestures**, and **eye-tracking** for futuristic and inclusive user interaction.
 
@@ -23,7 +28,7 @@
 - **ML/AI**: TensorFlow, OpenCV  
 - **Voice**: SpeechRecognition API  
 - **Eye-Tracking**: Dlib, OpenCV
-- 
+ 
 ## 📁 Folder Structure
 ---
 ```
@@ -47,7 +52,6 @@ MetaSynAI/
 ---
 ```
 ### 1. Clone the repo
-```bash
 git clone https://github.com/dj-ayush/MetaSynAI.git
 cd MetaSynAI
 ```
